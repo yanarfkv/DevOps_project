@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+
+  database:
+    image: postgres:${POSTGRES_VERSION:-15}-alpine
+    ports:
+      - "5433:5433"
+    command: -p 5433
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-devops_project}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
+
+  loki:
+    image: grafana/loki:2.6.1
+    ports:
+      - "3100"
+    volumes:
+      # directory must be created first, with uid:gid 10001:10001
+      - ./docker/volumes/loki:/loki
+
+  promtail:
+    image: grafana/promtail:2.6.1
+    volumes:
+      - ./docker/loki/promtail-config.yaml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers
+
+  grafana:
+    image: grafana/grafana:9.2.2
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker/volumes/grafana:/var/lib/grafana
+      - ./docker/loki/grafana/provisioning/:/etc/grafana/provisioning/
+
+volumes:
+  database_data:
+    driver: bridge
+
+networks:
+  loki:
