@@ -24,11 +24,14 @@ COPY docker/entrypoint.sh /entrypoint.sh
 
 # Копирование исходного кода проекта
 COPY . /var/www
+WORKDIR /var/www
+
+# Установка зависимостей
+COPY /composer.json /composer.json
+RUN composer install
 
 # Установка разрешений на папки
-RUN chmod -R 777 /var/www/var/cache /var/www/var/log
-
-WORKDIR /var/www
+RUN chmod -R 777 /var/cache /var/log
 
 # Установка исполняемого флага для entrypoint.sh
 RUN chmod +x /entrypoint.sh
